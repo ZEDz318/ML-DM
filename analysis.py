@@ -8,57 +8,74 @@ film_unique_values = df['Film_film'].unique()
 actor_unique_values = df['Nominee_actor'].unique()
 director_unique_values = df['Nominee_director'].unique()
 
-# You can check for duplicate rows based on the "MovieID" column
-# duplicate_movies = df[df.duplicated(subset='Film_film', keep=False)]
-#
-# # If duplicate_movies is empty, it means every movie is unique
-# if duplicate_movies.empty:
-#     print("Every movie is unique in the dataset.")
-# else:
-#     print("There are duplicate movies in the dataset.")
-#     print("Duplicate rows:")
-#     print(len(duplicate_movies))
+Nom_GoldenGlobe = df[df.columns[df.columns.str.startswith("Nom_GoldenGlobe")+df.columns.str.startswith("Nom_BAFTA")+df.columns.str.startswith("Oscarstat_totalnoms")]]
+Win_GoldenGlobe = df[df.columns[df.columns.str.startswith("Win_GoldenGlobe")+df.columns.str.startswith("Win_BAFTA")+df.columns.str.startswith("Oscarstat_previouswins")]]
+
+total_g_noms = Nom_GoldenGlobe.sum(axis=1)
+total_g_wins = Win_GoldenGlobe.sum(axis=1)
+
+df['total_talent'] = total_g_noms + total_g_wins
 
 
-# Budget vs Revenue
-profit = []
-for i in df['Film_film']:
-    for j in film_unique_values:
-        if i == j:
-            d = {'film' : i,
-                 'p': df[df['Film_film'] == i]['revenue'].values[0]-df[df['Film_film'] == i]['budget'].values[0]}
-            profit.append(d)
+# Assuming you have the DataFrame 'df' with 'revenue' and 'total_talent' columns
+revenue = df['revenue']
+total_talent = df['total_talent']
 
-names = [entry["film"] for entry in profit]
-values = [entry["p"] for entry in profit]
+# create a new df with unique films
+new_df = df.groupby('Film_film').agg({'budget': 'first', 'total_talent': 'sum', 'revenue': 'first', 'Rating_IMDB_actor': 'first'}).reset_index()
 
-# Create a scatter plot
-plt.scatter(names, values)
+genre_columns = [col for col in df.columns if col.startswith("Genre_") and col.endswith("_actor") or col.startswith("Film_film") or col.startswith("budget")]
+# print(genre_columns)
 
-# Labeling the axes
-plt.xlabel('Film')
-plt.ylabel('Profit')
 
-# Show the plot
+genre_counts = {}
+
+# Iterate through the columns
+for column in df.columns:
+    if column.startswith("Genre") and column.endswith("actor"):
+        genre = column.split("_")[1]  # Extract the genre name
+        genre_count = df[column].sum()  # Sum of values in the column
+        if genre_count > 0:
+            genre_counts[genre] = genre_counts.get(genre, 0) + genre_count
+
+# Calculate the average budget for each genre
+for genre in genre_counts:
+    genre_counts[genre] = int(df[df["Genre_" + genre + "_actor"] == 1]["budget"].mean())
+
+plt.figure(figsize=(8, 8))
+plt.pie(genre_counts.values(), labels=['']*len(genre_counts), autopct='%1.1f%%', startangle=140)
+
+# Add a legend with genre labels
+plt.legend(genre_counts.keys(), title="Genres")
+
+plt.axis('equal')  # Equal aspect ratio ensures that the pie chart is circular.
+plt.title("Budget Distribution by Genre")
 plt.show()
+# #--------------------------GENRE-------------------------------
+# Create a new DataFrame from the dictionary
+# genre_df = pd.DataFrame(list(genre_counts.items()), columns=["Genre", "Count"])
+# genre_df = genre_df.sort_values(by="Count", ascending=False)
+#
+# print(genre_df)
+# plt.figure(figsize=(8, 8))
+#
+# plt.pie(genre_df["Count"],  autopct=lambda p: f"{p:.1f}%" if p >= 1.5 else '', startangle=140)
+# plt.legend(genre_df["Genre"], title="Genres", loc="center left", bbox_to_anchor=(1, 0.5))
+#
+# plt.axis('equal')  # Equal aspect ratio ensures that the pie chart is circular.
+#
+# plt.title("Genre Distribution")
+#
+# # Display the pie chart
+# plt.show()
+#--------------------------GENRE-------------------------------
+# # Create a scatter plot
 # plt.figure(figsize=(8, 6))
-# plt.scatter(film_unique_values, df["budget"] - df["revenue"], alpha=0.7, c='b', edgecolors='k')
-# plt.title("Revenue vs Budget")
-# plt.xlabel("Budget")
-# plt.ylabel("Revenue")
-# plt.grid(True)
-
-# Show the plot
-plt.show()
-
-# Actors vs Revenue
-
-# plt.figure(figsize=(8, 6))
-# plt.scatter(df["Nominee_actor"], df["revenue"], alpha=0.7, c='b', edgecolors='k')
-# plt.title("Revenue vs Nominee_actor")
-# plt.xlabel("Nominee_actor")
-# plt.ylabel("Revenue")
+# plt.scatter(new_df['budget'], new_df['Rating_IMDB_actor'], alpha=0.5)
+# plt.title('Rating vs. budget')
+# plt.xlabel('budget')
+# plt.ylabel('Rating')
 # plt.grid(True)
 #
-# # Show the plot
+# # Display the plot
 # plt.show()
