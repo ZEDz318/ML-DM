@@ -17,13 +17,12 @@ total_g_wins = Win_GoldenGlobe.sum(axis=1)
 df['total_talent'] = total_g_noms + total_g_wins
 
 
-# Assuming you have the DataFrame 'df' with 'revenue' and 'total_talent' columns
 revenue = df['revenue']
 total_talent = df['total_talent']
 
 # create a new df with unique films
 new_df = df.groupby('Film_film').agg({'budget': 'first', 'total_talent': 'sum', 'revenue': 'first', 'Rating_IMDB_actor': 'first'}).reset_index()
-
+new_df.to_csv("simplified.csv", index=False)
 genre_columns = [col for col in df.columns if col.startswith("Genre_") and col.endswith("_actor") or col.startswith("Film_film") or col.startswith("budget")]
 # print(genre_columns)
 
